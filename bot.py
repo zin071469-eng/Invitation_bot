@@ -25,7 +25,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
   chat = update.effective_chat
   if chat.type in ["group", "supergroup"]:
     allowed_chats.add(chat.id)
-    await update.message.reply_text("✅ Group ကို ကြော်ငြာရန် ခွင့်ပြုချက် ရယူပြီးပါပြီ။")
+    await update.message.reply_text(
+        "ဒီ Group ကို ကြော်ငြာစာရင်းထဲသို့ အောင်မြင်စွာ ထည့်သွင်းပြီးပြီ။"
+    )
   elif chat.type == "private":
     await update.message.reply_text(
         "🤖 မင်္ဂလာပါ၊ ဒါက Admin နှင့် ကြော်ငြာ Bot ဖြစ်ပါသည်။"
@@ -166,61 +168,77 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /mute (စကားပြောခွင့်ပိတ်ရန်)
 async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
-  if not message or message.chat.type not in ["group", "supergroup"]:
+  if not message:
     return
+
+  if message.chat.type not in ["group", "supergroup"]:
+    await message.reply_text("❌ ဤအမိန့်ကို Group ထဲတွင်သာ အသုံးပြုနိုင်ပါသည်။")
+    return
+
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
 
-  if message.reply_to_message:
-    user = message.reply_to_message.from_user
-    try:
-      permissions = ChatPermissions(
-          can_send_messages=False,
-          can_send_media_messages=False,
-          can_send_polls=False,
-          can_send_other_messages=False,
-          can_add_web_page_previews=False,
-      )
-      await context.bot.restrict_chat_member(
-          chat_id=message.chat.id, user_id=user.id, permissions=permissions
-      )
-      await message.reply_text(f"🔇 {user.first_name} ကို Mute လုပ်လိုက်ပါပြီ။")
-    except Exception as e:
-      await message.reply_text(f"Error: {e}")
-  else:
-    await message.reply_text("⚠️ Mute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /mute ဟု ရိုက်ပါ။")
+  if not message.reply_to_message:
+    await message.reply_text(
+        "⚠️ Mute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /mute ဟု ရိုက်ပါကွာ။"
+    )
+    return
+
+  user = message.reply_to_message.from_user
+  try:
+    permissions = ChatPermissions(
+        can_send_messages=False,
+        can_send_media_messages=False,
+        can_send_polls=False,
+        can_send_other_messages=False,
+        can_add_web_page_previews=False,
+    )
+    await context.bot.restrict_chat_member(
+        chat_id=message.chat.id, user_id=user.id, permissions=permissions
+    )
+    await message.reply_text(f"🔇 {user.first_name} ကို Mute လုပ်လိုက်ပါပြီကွာ။")
+  except Exception as e:
+    await message.reply_text(f"⚠️ Mute လုပ်၍မရပါ Error: {e}")
 
 
 # /unmute (စကားပြောခွင့် ပြန်ဖွင့်ရန်)
 async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
-  if not message or message.chat.type not in ["group", "supergroup"]:
+  if not message:
     return
+
+  if message.chat.type not in ["group", "supergroup"]:
+    await message.reply_text("❌ ဤအမိန့်ကို Group ထဲတွင်သာ အသုံးပြုနိုင်ပါသည်။")
+    return
+
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
 
-  if message.reply_to_message:
-    user = message.reply_to_message.from_user
-    try:
-      permissions = ChatPermissions(
-          can_send_messages=True,
-          can_send_media_messages=True,
-          can_send_polls=True,
-          can_send_other_messages=True,
-          can_add_web_page_previews=True,
-      )
-      await context.bot.restrict_chat_member(
-          chat_id=message.chat.id, user_id=user.id, permissions=permissions
-      )
-      await message.reply_text(f"🔊 {user.first_name} ကို Unmute လုပ်ပေးလိုက်ပါပြီ။")
-    except Exception as e:
-      await message.reply_text(f"Error: {e}")
-  else:
+  if not message.reply_to_message:
     await message.reply_text(
-        "⚠️ Unmute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /unmute ဟု ရိုက်ပါ။"
+        "⚠️ Unmute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /unmute ဟု ရိုက်ပါကွာ။"
     )
+    return
+
+  user = message.reply_to_message.from_user
+  try:
+    permissions = ChatPermissions(
+        can_send_messages=True,
+        can_send_media_messages=True,
+        can_send_polls=True,
+        can_send_other_messages=True,
+        can_add_web_page_previews=True,
+    )
+    await context.bot.restrict_chat_member(
+        chat_id=message.chat.id, user_id=user.id, permissions=permissions
+    )
+    await message.reply_text(
+        f"🔊 {user.first_name} ကို Unmute လုပ်ပေးလိုက်ပါပြီကွာ။"
+    )
+  except Exception as e:
+    await message.reply_text(f"⚠️ Unmute လုပ်၍မရပါ Error: {e}")
 
 
 def main():
@@ -246,4 +264,4 @@ def main():
 
 if __name__ == "__main__":
   main()
-
+    
