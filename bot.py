@@ -168,7 +168,7 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await message.reply_text("⚠️ ဥပမာ - `/unban 123456789` ဟု အသုံးပြုပါ။")
 
 
-# /mute (စကားပြောခွင့်ပိတ်ရန်)
+# /mute (စကားပြောခွင့် အပြည့်အစုံပိတ်ရန်)
 async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if message.chat.type not in ["group", "supergroup"]:
@@ -180,13 +180,24 @@ async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   if message.reply_to_message:
     user_id = message.reply_to_message.from_user.id
     try:
-      permissions = ChatPermissions(can_send_messages=False)
+      permissions = ChatPermissions(
+          can_send_messages=False,
+          can_send_audios=False,
+          can_send_documents=False,
+          can_send_photos=False,
+          can_send_videos=False,
+          can_send_video_notes=False,
+          can_send_voice_notes=False,
+          can_send_polls=False,
+          can_send_other_messages=False,
+          can_add_web_page_previews=False,
+      )
       await context.bot.restrict_chat_member(
           chat_id=message.chat.id, user_id=user_id, permissions=permissions
       )
       await message.reply_text(
           f"🔇 အသုံးပြုသူ {message.reply_to_message.from_user.first_name} ၏"
-          " စကားပြောခွင့်ကို ပိတ်လိုက်ပါပြီ။"
+          " စကားပြောခွင့်ကို အပြည့်အစုံ ပိတ်လိုက်ပါပြီ။"
       )
     except Exception as e:
       await message.reply_text(f"Error: {e}")
@@ -213,6 +224,13 @@ async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
           can_send_media_messages=True,
           can_send_other_messages=True,
           can_add_web_page_previews=True,
+          can_send_audios=True,
+          can_send_documents=True,
+          can_send_photos=True,
+          can_send_videos=True,
+          can_send_video_notes=True,
+          can_send_voice_notes=True,
+          can_send_polls=True,
       )
       await context.bot.restrict_chat_member(
           chat_id=message.chat.id, user_id=user_id, permissions=permissions
@@ -252,3 +270,4 @@ def main():
 
 if __name__ == "__main__":
   main()
+                      
