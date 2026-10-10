@@ -24,11 +24,9 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
   chat = update.effective_chat
   if chat.type in ["group", "supergroup"]:
     allowed_chats.add(chat.id)
-    await update.message.reply_text(
-        "ဒီ Group ကို ကြော်ငြာစာရင်းထဲသို့ ထည့်ပြီးပါပြီ။"
-    )
+    await update.message.reply_text("Group ကို စာရင်းသွင်းပြီးပါပြီ။")
   elif chat.type == "private":
-    await update.message.reply_text("🤖 မင်္ဂလာပါ၊ Bot အဆင်သင့်ဖြစ်ပါပြီ။")
+    await update.message.reply_text("🤖 Bot အဆင်သင့်ဖြစ်ပါပြီ။")
 
 
 async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -41,7 +39,7 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   user_id = update.effective_user.id
   if user_id != OWNER_ID:
-    await update.message.reply_text("❌ Owner သာ အသုံးပြုနိုင်ပါသည်။")
+    await update.message.reply_text("❌ Owner သာ သသုံးပြုနိုင်ပါသည်။")
     return
 
   ad_message = " ".join(context.args)
@@ -74,15 +72,6 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   await update.message.reply_text(f"📢 ပို့ပြီးပါပြီ - အောင်မြင်: {success_count}")
 
 
-async def is_admin(chat, user_id):
-  try:
-    member = await chat.get_member(user_id)
-    return member.status in ["creator", "administrator"]
-  except Exception as e:
-    print(f"Admin check error: {e}")
-    return False
-
-
 # /mute (စကားပြောခွင့်ပိတ်ရန်)
 async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
@@ -91,10 +80,6 @@ async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
   if message.chat.type not in ["group", "supergroup"]:
     await message.reply_text("❌ Group ထဲတွင်သာ သုံးပါ။")
-    return
-
-  if not await is_admin(message.chat, message.from_user.id):
-    await message.reply_text("❌ Admin များသာ သုံးနိုင်ပါသည်။")
     return
 
   if not message.reply_to_message:
@@ -131,10 +116,6 @@ async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
   if message.chat.type not in ["group", "supergroup"]:
     await message.reply_text("❌ Group ထဲတွင်သာ သုံးပါ။")
-    return
-
-  if not await is_admin(message.chat, message.from_user.id):
-    await message.reply_text("❌ Admin များသာ သုံးနိုင်ပါသည်။")
     return
 
   if not message.reply_to_message:
@@ -184,4 +165,4 @@ def main():
 
 if __name__ == "__main__":
   main()
-
+        
