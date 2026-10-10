@@ -39,7 +39,7 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   user_id = update.effective_user.id
   if user_id != OWNER_ID:
-    await update.message.reply_text("❌ Owner သာ သသုံးပြုနိုင်ပါသည်။")
+    await update.message.reply_text("❌ Owner သာ အသုံးပြုနိုင်ပါသည်။")
     return
 
   ad_message = " ".join(context.args)
@@ -72,11 +72,12 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   await update.message.reply_text(f"📢 ပို့ပြီးပါပြီ - အောင်မြင်: {success_count}")
 
 
-# /mute (စကားပြောခွင့်ပိတ်ရန်)
 async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if not message:
     return
+
+  print("Mute command triggered!")  # Railway logs တွင် ပေါ်လာမည်
 
   if message.chat.type not in ["group", "supergroup"]:
     await message.reply_text("❌ Group ထဲတွင်သာ သုံးပါ။")
@@ -108,7 +109,6 @@ async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await message.reply_text(f"⚠️ Mute မလုပ်နိုင်ပါ Error: {e}")
 
 
-# /unmute (စကားပြောခွင့် ပြန်ဖွင့်ရန်)
 async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if not message:
@@ -160,9 +160,10 @@ def main():
   app.add_handler(MessageHandler(filters.ALL & (~filters.COMMAND), track_chats))
 
   print("Bot is running...")
-  app.run_polling()
+  # drop_pending_updates=True ထည့်သွင်းထားသဖြင့် Webhook အဟောင်းများ ကင်းစင်ပြီး Command များကို တန်းဖမ်းမည်
+  app.run_polling(drop_pending_updates=True)
 
 
 if __name__ == "__main__":
   main()
-        
+    
