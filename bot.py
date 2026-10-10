@@ -126,32 +126,27 @@ async def check_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
 # /ban (အသုံးပြုသူကို ဂရုမှထုတ်ပစ်ရန်)
 async def ban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
-  if message.chat.type not in ["group", "supergroup"]:
+  if not message or message.chat.type not in ["group", "supergroup"]:
     return
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
 
   if message.reply_to_message:
-    user_id = message.reply_to_message.from_user.id
+    user = message.reply_to_message.from_user
     try:
-      await message.chat.ban_member(user_id)
-      await message.reply_text(
-          f"🔨 အသုံးပြုသူ {message.reply_to_message.from_user.first_name} ကို"
-          " ဂရုမှ Ban လိုက်ပါပြီ။"
-      )
+      await message.chat.ban_member(user.id)
+      await message.reply_text(f"🔨 {user.first_name} ကို ဂရုမှ Ban လိုက်ပါပြီ။")
     except Exception as e:
       await message.reply_text(f"Error: {e}")
   else:
-    await message.reply_text(
-        "⚠️ Ban လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /ban ဟု ရိုက်ပါ။"
-    )
+    await message.reply_text("⚠️ Ban လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /ban ဟု ရိုက်ပါ။")
 
 
 # /unban (ပိတ်ပင်ထားမှုကို ပြန်ဖြည်ရန်)
 async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
-  if message.chat.type not in ["group", "supergroup"]:
+  if not message or message.chat.type not in ["group", "supergroup"]:
     return
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
@@ -168,77 +163,58 @@ async def unban_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await message.reply_text("⚠️ ဥပမာ - `/unban 123456789` ဟု အသုံးပြုပါ။")
 
 
-# /mute (စကားပြောခွင့် အပြည့်အစုံပိတ်ရန်)
+# /mute (စကားပြောခွင့်ပိတ်ရန်)
 async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
-  if message.chat.type not in ["group", "supergroup"]:
+  if not message or message.chat.type not in ["group", "supergroup"]:
     return
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
 
   if message.reply_to_message:
-    user_id = message.reply_to_message.from_user.id
+    user = message.reply_to_message.from_user
     try:
       permissions = ChatPermissions(
           can_send_messages=False,
-          can_send_audios=False,
-          can_send_documents=False,
-          can_send_photos=False,
-          can_send_videos=False,
-          can_send_video_notes=False,
-          can_send_voice_notes=False,
+          can_send_media_messages=False,
           can_send_polls=False,
           can_send_other_messages=False,
           can_add_web_page_previews=False,
       )
       await context.bot.restrict_chat_member(
-          chat_id=message.chat.id, user_id=user_id, permissions=permissions
+          chat_id=message.chat.id, user_id=user.id, permissions=permissions
       )
-      await message.reply_text(
-          f"🔇 အသုံးပြုသူ {message.reply_to_message.from_user.first_name} ၏"
-          " စကားပြောခွင့်ကို အပြည့်အစုံ ပိတ်လိုက်ပါပြီ။"
-      )
+      await message.reply_text(f"🔇 {user.first_name} ကို Mute လုပ်လိုက်ပါပြီ။")
     except Exception as e:
       await message.reply_text(f"Error: {e}")
   else:
-    await message.reply_text(
-        "⚠️ Mute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /mute ဟု ရိုက်ပါ။"
-    )
+    await message.reply_text("⚠️ Mute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /mute ဟု ရိုက်ပါ။")
 
 
 # /unmute (စကားပြောခွင့် ပြန်ဖွင့်ရန်)
 async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
-  if message.chat.type not in ["group", "supergroup"]:
+  if not message or message.chat.type not in ["group", "supergroup"]:
     return
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
 
   if message.reply_to_message:
-    user_id = message.reply_to_message.from_user.id
+    user = message.reply_to_message.from_user
     try:
       permissions = ChatPermissions(
           can_send_messages=True,
           can_send_media_messages=True,
+          can_send_polls=True,
           can_send_other_messages=True,
           can_add_web_page_previews=True,
-          can_send_audios=True,
-          can_send_documents=True,
-          can_send_photos=True,
-          can_send_videos=True,
-          can_send_video_notes=True,
-          can_send_voice_notes=True,
-          can_send_polls=True,
       )
       await context.bot.restrict_chat_member(
-          chat_id=message.chat.id, user_id=user_id, permissions=permissions
+          chat_id=message.chat.id, user_id=user.id, permissions=permissions
       )
-      await message.reply_text(
-          f"🔊 အသုံးပြုသူ {message.reply_to_message.from_user.first_name} ၏"
-          " စကားပြောခွင့်ကို ပြန်ဖွင့်ပေးလိုက်ပါပြီ။"
-      )
+      await message.reply_text(f"🔊 {user.first_name} ကို Unmute လုပ်ပေးလိုက်ပါပြီ။")
     except Exception as e:
       await message.reply_text(f"Error: {e}")
   else:
@@ -270,4 +246,4 @@ def main():
 
 if __name__ == "__main__":
   main()
-                      
+
