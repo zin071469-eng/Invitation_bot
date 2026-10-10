@@ -25,11 +25,14 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
   chat = update.effective_chat
   if chat.type in ["group", "supergroup"]:
     allowed_chats.add(chat.id)
-    await update.message.reply_text("✅ Group ကို ကြော်ငြာရန် ခွင့်ပြုချက် ရယူပြီးပါပြီ")
+    await update.message.reply_text("✅ Group ကို ကြော်ငြာရန် ခွင့်ပြုချက် ရယူပြီးပါပြီ။")
   elif chat.type == "private":
-    await update.message.reply_text("🤖 မင်္ဂလာပါ၊ ဒါက ကြော်ငြာ Bot ဖြစ်ပါတယ်။")
+    await update.message.reply_text(
+        "🤖 မင်္ဂလာပါ၊ ဒါက Admin နှင့် ကြော်ငြာ Bot ဖြစ်ပါသည်။"
+    )
 
 
+# ကြော်ငြာလွှင့်ခြင်း (Broadcast) - Owner သာ သုံးနိုင်သည်
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   user_id = update.effective_user.id
   if user_id != OWNER_ID:
@@ -52,8 +55,8 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
   if not allowed_chats:
     await update.message.reply_text(
-        "⚠️ ကြော်ငြာမည့် Group များ ကို မတွေ့ရသေးပါ။ (Bot ကို Group"
-        " ထဲသို့ ထည့်ပြီး /start ခိုင်းပါ)"
+        "⚠️ ကြော်ငြာမည့် Group များ မတွေ့ရသေးပါ။ (Bot ကို Group ထဲသို့ ထည့်ပြီး"
+        " /start ခိုင်းပါ)"
     )
     return
 
@@ -92,13 +95,21 @@ async def check_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
     return
 
   text = message.text or message.caption or ""
+  has_link = False
+
+  if message.entities:
+    for entity in message.entities:
+      if entity.type in ["url", "text_link", "mention"]:
+        has_link = True
+
   if (
-      "http://" in text
+      has_link
+      or "http://" in text
       or "https://" in text
       or "t.me/" in text
       or "www." in text
   ):
-    # Admin ဖြစ်မဖြစ် စစ်ဆေးရန်
+    # Admin ဖြစ်ပါက မဖျက်ပါ
     if await is_admin(message.chat, message.from_user.id):
       return
 
@@ -169,12 +180,10 @@ async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   if message.reply_to_message:
     user_id = message.reply_to_message.from_user.id
     try:
-      permissions = ChatPermissions(
-          can_send_messages=False,
-          can_send_media_messages=False,
-          can_send_other_messages=False,
+      permissions = ChatPermissions(can_send_messages=False)
+      await context.bot.restrict_chat_member(
+          chat_id=message.chat.id, user_id=user_id, permissions=permissions
       )
-      await message.chat.restrict_member(user_id, permissions)
       await message.reply_text(
           f"🔇 အသုံးပြုသူ {message.reply_to_message.from_user.first_name} ၏"
           " စကားပြောခွင့်ကို ပိတ်လိုက်ပါပြီ။"
@@ -205,7 +214,9 @@ async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
           can_send_other_messages=True,
           can_add_web_page_previews=True,
       )
-      await message.chat.restrict_member(user_id, permissions)
+      await context.bot.restrict_chat_member(
+          chat_id=message.chat.id, user_id=user_id, permissions=permissions
+      )
       await message.reply_text(
           f"🔊 အသုံးပြုသူ {message.reply_to_message.from_user.first_name} ၏"
           " စကားပြောခွင့်ကို ပြန်ဖွင့်ပေးလိုက်ပါပြီ။"
@@ -228,7 +239,7 @@ def main():
   app.add_handler(CommandHandler("mute", mute_user))
   app.add_handler(CommandHandler("unmute", unmute_user))
 
-  # လင့်ခ်များ ဖမ်းယူရန် Handler (Text နှင့် Caption များအတွက်)
+  # လင့်ခ်စစ်ဆေးသည့် Handler
   app.add_handler(
       MessageHandler(
           filters.TEXT & (~filters.COMMAND), check_links
@@ -241,4 +252,3 @@ def main():
 
 if __name__ == "__main__":
   main()
-      
