@@ -18,7 +18,6 @@ logging.basicConfig(
 TOKEN = os.getenv("BOT_TOKEN")
 OWNER_ID = int(os.getenv("OWNER_ID", "0"))
 
-# Group ID များကို မှတ်သားရန် Set တစ်ခု
 allowed_chats = set()
 
 
@@ -35,7 +34,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
 
-# Bot ကို Group ထဲသို့ ထည့်လိုက်သည်နှင့် Group ID ကို အလိုအလျောက် မှတ်သားရန်
 async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if message and message.chat:
@@ -43,7 +41,6 @@ async def track_chats(update: Update, context: ContextTypes.DEFAULT_TYPE):
       allowed_chats.add(message.chat.id)
 
 
-# ကြော်ငြာလွှင့်ခြင်း (Broadcast) - Owner သာ သုံးနိုင်သည်
 async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   user_id = update.effective_user.id
   if user_id != OWNER_ID:
@@ -65,11 +62,7 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
 
   if not allowed_chats:
-    # တစ်ခါမှ /start မခိုင်းရသေးရင်တောင် Bot ရှိနေတဲ့ chat တွေကို ရှာဖို့ ကြိုးစားပါမည်
-    await update.message.reply_text(
-        "⚠️ ကြော်ငြာမည့် Group များ မတွေ့ရသေးပါ။ (Bot ကို Group ထဲသို့"
-        " အသစ်ထည့်ပါ သို့မဟုတ် /start ပို့ပါ)"
-    )
+    await update.message.reply_text("⚠️ ကြော်ငြာမည့် Group များ မတွေ့ရသေးပါ။")
     return
 
   success_count = 0
@@ -89,16 +82,15 @@ async def broadcast(update: Update, context: ContextTypes.DEFAULT_TYPE):
   )
 
 
-# Admin ဟုတ်မဟုတ် စစ်ဆေးရန်
 async def is_admin(chat, user_id):
   try:
     member = await chat.get_member(user_id)
     return member.status in ["creator", "administrator"]
-  except:
+  except Exception as e:
+    print(f"Admin check error: {e}")
     return False
 
 
-# Anti-Link (လင့်ခ်စစ်ဆေးပြီး ဖျက်ခြင်း)
 async def check_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if not message or not message.chat:
@@ -118,7 +110,7 @@ async def check_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
       has_link
       or "http://" in text
       or "https://" in text
-      or "t.me/" in text
+      or "t.me://" in text
       or "www." in text
   ):
     if await is_admin(message.chat, message.from_user.id):
@@ -134,22 +126,30 @@ async def check_links(update: Update, context: ContextTypes.DEFAULT_TYPE):
       print(f"Error deleting link: {e}")
 
 
-# /mute (စကားပြောခွင့်ပိတ်ရန်)
+# /mute (စကားပြောခွင့်ပိတ်ရန် - အသေးစိတ် Debug ဖော်ပြပေးရန်)
 async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if not message:
     return
+
+  print("Mute command received!")  # Railway logs တွင် ပေါ်လာမည်
+
   if message.chat.type not in ["group", "supergroup"]:
     await message.reply_text("❌ ဤအမိန့်ကို Group ထဲတွင်သာ အသုံးပြုနိုင်ပါသည်။")
     return
-  if not await is_admin(message.chat, message.from_user.id):
+
+  # Admin ဟုတ်မဟုတ် စစ်ဆေးခြင်း
+  admin_check = await is_admin(message.chat, message.from_user.id)
+  if not admin_check:
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
+
   if not message.reply_to_message:
     await message.reply_text(
-        "⚠️ Mute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /mute ဟု ရိုက်ပါကွာ။"
+        "⚠️ Mute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /mute ဟု ရိုက်ပါ။"
     )
     return
+
   if not message.reply_to_message.from_user:
     await message.reply_text("⚠️ ဤအသုံးပြုသူ၏ အချက်အလက်ကို ယူ၍မရပါ။")
     return
@@ -166,9 +166,11 @@ async def mute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.restrict_chat_member(
         chat_id=message.chat.id, user_id=user.id, permissions=permissions
     )
-    await message.reply_text(f"🔇 {user.first_name} ကို Mute လုပ်လိုက်ပါပြီကွာ။")
+    await message.reply_text(f"🔇 {user.first_name} ကို Mute လုပ်လိုက်ပါပြီ။")
+    print(f"Successfully muted user {user.id}")
   except Exception as e:
-    await message.reply_text(f"⚠️ Mute လုပ်၍မရပါ Error: {e}")
+    print(f"Mute Error: {e}")
+    await message.reply_text(f"⚠️ Mute မလုပ်နိုင်ပါ Error: {e}")
 
 
 # /unmute (စကားပြောခွင့် ပြန်ဖွင့်ရန်)
@@ -176,18 +178,23 @@ async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
   message = update.message
   if not message:
     return
+
+  print("Unmute command received!")
+
   if message.chat.type not in ["group", "supergroup"]:
     await message.reply_text("❌ ဤအမိန့်ကို Group ထဲတွင်သာ အသုံးပြုနိုင်ပါသည်။")
     return
+
   if not await is_admin(message.chat, message.from_user.id):
     await message.reply_text("❌ ဤအမိန့်ကို Admin များသာ အသုံးပြုနိုင်ပါသည်။")
     return
+
   if not message.reply_to_message:
     await message.reply_text(
-        "⚠️ Unmute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /unmute ဟု"
-        " ရိုက်ပါကွာ။"
+        "⚠️ Unmute လုပ်လိုသူ၏ မက်ဆေ့ခ်ျကို Reply လုပ်ပြီး /unmute ဟု ရိုက်ပါ။"
     )
     return
+
   if not message.reply_to_message.from_user:
     await message.reply_text("⚠️ ဤအသုံးပြုသူ၏ အချက်အလက်ကို ယူ၍မရပါ။")
     return
@@ -204,11 +211,11 @@ async def unmute_user(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await context.bot.restrict_chat_member(
         chat_id=message.chat.id, user_id=user.id, permissions=permissions
     )
-    await message.reply_text(
-        f"🔊 {user.first_name} ကို Unmute လုပ်ပေးလိုက်ပါပြီကွာ။"
-    )
+    await message.reply_text(f"🔊 {user.first_name} ကို Unmute လုပ်ပေးလိုက်ပါပြီ။")
+    print(f"Successfully unmuted user {user.id}")
   except Exception as e:
-    await message.reply_text(f"⚠️ Unmute လုပ်၍မရပါ Error: {e}")
+    print(f"Unmute Error: {e}")
+    await message.reply_text(f"⚠️ Unmute မလုပ်နိုင်ပါ Error: {e}")
 
 
 def main():
@@ -219,7 +226,6 @@ def main():
   app.add_handler(CommandHandler("mute", mute_user))
   app.add_handler(CommandHandler("unmute", unmute_user))
 
-  # Group ထဲသို့ မက်ဆေ့ခ်ျ သို့မဟုတ် လှုပ်ရှားမှုရောက်တိုင်း Group ID ကို အလိုအလျောက် မှတ်သားရန်
   app.add_handler(
       MessageHandler(
           filters.ALL & (~filters.COMMAND), track_chats
